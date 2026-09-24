@@ -2,43 +2,75 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
-int modern_parse_year(const char *record, int *out_year) {
-    /* TODO(student): strict parsing with strtol
-       Requirements:
-       - find ':'
-       - fail if ':' missing
-       - fail if no digits after ':'
-       - fail if extra characters remain after number
-       - fail on overflow/underflow via errno
-       - on success, set *out_year and return 0
-       - on failure, return -1
-    */
-    (void)record;
-    (void)out_year;
-    return -1;
-}
+int modern_parse_year(const char *record, int *out_year)
+{
+    const char *colon;
+    char *end;
+    long value;
 
-int modern_make_slug(const char *name, char *out, size_t out_size) {
-    size_t i;
-
-    /* TODO(student): safe slug conversion
-       - same transformation as legacy_make_slug
-       - must not write past out_size
-       - always NUL-terminate on success
-       - return 0 on success, -1 if output buffer too small
-    */
-    if (out_size == 0) {
+    if (record == NULL || out_year == NULL)
+    {
         return -1;
     }
 
-    for (i = 0; name[i] != '\0' && i + 1 < out_size; i++) {
-        out[i] = name[i];
+    colon = strchr(record, ':');
+    if (colon == NULL)
+    {
+        return -1;
     }
 
-    if (name[i] != '\0') {
+    errno = 0;
+    value = strtol(colon + 1, &end, 10);
+
+    if (end == colon + 1)
+    {
+        return -1;
+    }
+    if (errno == ERANGE)
+    {
+        return -1;
+    }
+    if (*end != '\0')
+    {
+        return -1;
+    }
+    if (value < INT_MIN || value > INT_MAX)
+    {
+        return -1;
+    }
+
+    *out_year = (int)value;
+    return 0;
+}
+
+int modern_make_slug(const char *name, char *out, size_t out_size)
+{
+    size_t i;
+
+    if (name == NULL || out == NULL || out_size == 0)
+    {
+        return -1;
+    }
+
+    for (i = 0; name[i] != '\0' && i + 1 < out_size; i++)
+    {
+        if (name[i] == ' ')
+        {
+            out[i] = '_';
+        }
+        else
+        {
+            out[i] = (char)tolower((unsigned char)name[i]);
+        }
+    }
+
+    if (name[i] != '\0')
+    {
+        out[0] = '\0';
         return -1;
     }
 
